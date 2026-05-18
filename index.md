@@ -6,7 +6,7 @@ description: SupportAssistant — extensão Chrome
 
 # Política de Privacidade — SupportAssistant
 
-**Última atualização:** abril de 2026
+**Última atualização:** maio de 2026
 
 ---
 
@@ -33,6 +33,21 @@ A extensão lê o DOM das páginas onde está autorizada a operar (nome do clien
 
 ### Documento do cliente em fluxo automatizado
 Durante a execução do fluxo de busca automática de clientes, o documento (CNPJ) é mantido exclusivamente em **memória de sessão** (API `chrome.storage.session`), cifrado em **AES-GCM** com chave gerada aleatoriamente a cada sessão. É descartado automaticamente ao fechar o navegador. Nunca é persistido em disco em texto claro.
+
+### Dados do Analista (Perfil)
+Informações preenchidas manualmente pelo usuário em Configurações > Perfil (nome do analista, L2 responsável, Supervisor responsável, par de pausa de chat). São armazenadas via `chrome.storage.local` e usadas apenas para substituir variáveis em atalhos de texto (ex: `[L1]`, `[L2]`, `[Supervisor]`). Não são transmitidas a nenhum servidor.
+
+### Rascunhos automáticos de respostas de tickets
+Quando o usuário está digitando uma resposta em um ticket e a página é recarregada, a aba é fechada ou o computador é reiniciado antes do envio, o texto do campo de resposta é preservado localmente em `chrome.storage.local`. O conteúdo é **cifrado com AES-GCM** (chave de 256 bits gerada uma única vez por instalação e armazenada na mesma máquina) antes de ser gravado em disco.
+
+A retenção é de **até 1 hora** sem edição: rascunhos com mais de uma hora sem alteração são apagados automaticamente por uma tarefa periódica (`chrome.alarms`), mesmo sem nenhuma aba aberta. O rascunho também é descartado ao enviar a mensagem pelo próprio sistema de tickets ou ao acionar o botão "Limpar" da ferramenta.
+
+O recurso pode ser desativado pelo usuário em Configurações > Ticket > Formatação de Respostas. Ao desativar, todos os rascunhos preservados existentes são apagados imediatamente.
+
+### Pasta de Tickets (organização manual)
+O usuário pode criar uma árvore de pastas e subpastas para organizar tickets de seu interesse, salvando o número visível e a URL de cada ticket que escolher. Os dados (nomes de pasta e URLs escolhidas) são armazenados via `chrome.storage.local` sem cifra (informação de organização pessoal, sem PII de cliente).
+
+Não há expiração automática: o conteúdo dessa árvore é gerenciado manualmente pelo usuário (adicionar, editar, remover). Pode ser **exportado** para arquivo JSON e **importado** em outra máquina ou após reinstalação, em Configurações > Pasta de Tickets > Backup.
 
 ---
 
@@ -65,9 +80,11 @@ Todos os recursos utilizados pela extensão (ícones, sons de alerta, scripts) e
 ## Controle do usuário sobre seus dados
 
 - Todos os dados manipulados pela extensão permanecem na máquina do usuário.
-- O usuário pode **exportar** seus atalhos a qualquer momento, através da função de backup em arquivo CSV disponível na tela de configurações.
+- O usuário pode **exportar** seus atalhos de texto a qualquer momento, através da função de backup em arquivo CSV disponível na tela de configurações.
+- O usuário pode **exportar e importar** a árvore da Pasta de Tickets em arquivo JSON, em Configurações > Pasta de Tickets > Backup. A importação oferece modos "Mesclar" (deduplica por nome de pasta e URL no mesmo nível) e "Substituir tudo".
+- O usuário pode **visualizar e gerenciar** o espaço ocupado pela extensão em Configurações > Perfil > Armazenamento Local, com detalhamento por categoria (Atalhos do Short Text, Rascunhos de Tickets, Pastas de Tickets, Outros).
 - O usuário pode **remover** todos os dados da extensão desinstalando-a pelo menu `chrome://extensions`. A desinstalação apaga integralmente o storage da extensão.
-- O usuário pode **desativar** módulos individualmente (atalhos, formatador, sinalizador, botão flutuante) através das configurações.
+- O usuário pode **desativar** módulos individualmente (atalhos, formatador, sinalizador, botão flutuante, rascunho automático) através das configurações.
 
 ---
 
