@@ -6,7 +6,7 @@ description: SupportAssistant — extensão Chrome
 
 # Política de Privacidade — SupportAssistant
 
-**Última atualização:** maio de 2026
+**Última atualização:** 21 de maio de 2026
 
 ---
 
@@ -49,6 +49,14 @@ O usuário pode criar uma árvore de pastas e subpastas para organizar tickets d
 
 Não há expiração automática: o conteúdo dessa árvore é gerenciado manualmente pelo usuário (adicionar, editar, remover). Pode ser **exportado** para arquivo JSON e **importado** em outra máquina ou após reinstalação, em Configurações > Pasta de Tickets > Backup.
 
+### Chave da API Gemini (BYOK) e prompts personalizados
+Para usar a funcionalidade de Resumo do Atendimento (que aciona o modelo Gemini do Google), cada usuário gera sua **própria chave de API** gratuita em [aistudio.google.com/apikey](https://aistudio.google.com/apikey) e cola na tela de configurações da extensão. A chave é **cifrada com AES-GCM** (chave de 256 bits gerada uma única vez por instalação e armazenada na mesma máquina) antes de ser gravada em `chrome.storage.local`. O desenvolvedor da extensão não tem acesso a essa chave em nenhum momento.
+
+Os prompts (textos enviados ao modelo) que controlam o formato do resumo são armazenados em `chrome.storage.local` (chave `iaPromptsCustom`). O usuário pode editá-los livremente em Configurações > Resumo Atendimento e restaurar os defaults embarcados a qualquer momento. Nenhum dado dos prompts é transmitido a servidores do desenvolvedor.
+
+### Cache de resumos gerados
+Cada resumo gerado pelo Gemini é armazenado em `chrome.storage.local` por **até 7 dias**, indexado por atendimento. Após esse prazo, é apagado automaticamente. O usuário pode forçar a geração de um novo resumo a qualquer momento clicando em "Resumir conversa atual" no modal.
+
 ---
 
 ## Origens autorizadas
@@ -57,7 +65,8 @@ A extensão atua apenas nas seguintes origens, declaradas em seu manifesto e exi
 
 - **Central de atendimento ao cliente** — `*.octadesk.com`, `*.octadesk.app`
 - **Sistema de tickets** — `www.bling.com.br`
-- **Site dos Correios** — `buscacepinter.correios.com.br` *(para preenchimento automático de CEP)*
+- **Site dos Correios** — `buscacepinter.correios.com.br` *(para preenchimento automático de CEP no fluxo legado de consulta)*
+- **ViaCEP** — `viacep.com.br` *(para consulta direta de CEP via API pública, sem necessidade de abrir nova aba)*
 
 Em qualquer outra página da web, a extensão permanece inativa e não tem acesso ao conteúdo.
 
@@ -67,7 +76,28 @@ Em qualquer outra página da web, a extensão permanece inativa e não tem acess
 
 A extensão **não realiza chamadas a servidores próprios do desenvolvedor**. Não há analytics, telemetria, tracking, envio de relatórios de uso ou qualquer comunicação com infraestrutura controlada pelo desenvolvedor.
 
-A interação da extensão se restringe às mesmas plataformas que o usuário já acessa em seu fluxo de trabalho normal — nas quais ela apenas lê elementos da interface e automatiza ações que o próprio usuário realizaria manualmente.
+A interação da extensão se restringe às mesmas plataformas que o usuário já acessa em seu fluxo de trabalho normal (nas quais ela apenas lê elementos da interface e automatiza ações que o próprio usuário realizaria manualmente), com uma única exceção declarada:
+
+### Consulta de CEP via ViaCEP
+
+Quando o usuário aciona a função "Buscar" no módulo de Consulta de CEP, o número do CEP digitado é enviado para a API pública [ViaCEP](https://viacep.com.br) (endpoint `https://viacep.com.br/ws/<CEP>/json/`) para obter o endereço correspondente. Os campos retornados incluem CEP, logradouro, bairro, cidade, UF e código IBGE do município (usado em notas fiscais).
+
+Detalhes:
+- A requisição é feita exclusivamente a partir da ação manual do usuário (clique em "Buscar" ou tecla Enter).
+- Apenas o número do CEP é enviado. Nenhum outro dado pessoal, identificador da extensão, identificador do usuário ou cookie acompanha a chamada (`credentials: 'omit'`).
+- A ViaCEP é um serviço público brasileiro de consulta de CEP em operação desde 2014, amplamente utilizado pela comunidade de desenvolvimento.
+- O fluxo legado de consulta nos Correios continua disponível como opção alternativa pelo link "clique aqui" exibido junto ao formulário.
+
+### Geração de resumo via Google Gemini (BYOK)
+
+Quando o usuário aciona o botão "✨ Resumo do Atendimento", o histórico textual da conversa ou do ticket aberto é enviado **diretamente do navegador do usuário** para a API do Google Gemini (endpoint `https://generativelanguage.googleapis.com/v1beta/models/<modelo>:generateContent`), autenticando com a chave própria do usuário (BYOK). O retorno (texto do resumo) é exibido no navegador e armazenado em cache local conforme descrito acima.
+
+Detalhes:
+- A requisição é feita exclusivamente a partir da ação manual do usuário (clique no botão "✨ Resumo" ou "Resumir conversa atual").
+- O conteúdo enviado é o histórico textual visível na tela do atendimento (as mesmas mensagens que o usuário já visualiza).
+- Nenhum dado é enviado a servidores do desenvolvedor da extensão. A comunicação ocorre exclusivamente entre o navegador do usuário e a API do Google, com `credentials: 'omit'` (sem cookies ou identificadores adicionais).
+- O usuário pode revogar a chave a qualquer momento em [aistudio.google.com/apikey](https://aistudio.google.com/apikey), ou removê-la diretamente das configurações da extensão (botão "Remover chave").
+- A política de uso de dados da API do Google Gemini é independente desta política e está disponível em [ai.google.dev/gemini-api/terms](https://ai.google.dev/gemini-api/terms).
 
 ---
 
